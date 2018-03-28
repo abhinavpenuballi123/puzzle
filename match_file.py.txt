@@ -1,0 +1,58 @@
+import os,sys
+import hashlib
+
+def findDup(parentFolder):
+    dups = {}
+    for dirName, subdirs, filelist in os.walk(parentFolder):
+        print('Scanning %s..'% dirName) 
+        for filename in filelist:
+            path = os.path.join(dirName, filename)
+            file_hash = hashfile(path)
+            if file_hash in dups:
+               dups[file_hash].append(path)
+            else:
+               dups[file_hash] = [path]
+
+    return dups
+
+def joinDicts(match_dict, dup_dict):
+    for key in dup_dict.keys():
+        if key in match_dict:
+           match_dict[key] = match_dict[key] + dup_dict[key]
+         else:
+           match_dict[key] = dup_dict[key]
+
+def hashfile(path, blocksize=65536):
+    afile = open(path, 'rb')
+    hasher = hashlib.md5()
+    buf = afile.read(blocksize)
+    while len(buf) > 0:
+        hasher.update(buf)
+        buf = afile.read(blocksize)
+    afile.close()
+    return hasher.hexdigest()
+
+def printResults(match):
+    results = list(filter(lambda x: len(x) > 1, match.values()))
+    #results = list(dict1.values())
+    if len(results) > 0:
+       print('Matches Found:')
+       matches = {}
+       matches['matches'] = results
+       print(matches)
+    else:
+        print('No matching files found')
+
+if _name_ == '_main_':
+    if len(sys.agrv) > 1:
+         match = {}
+         folders = sys.agrv[1:]
+         for folder in folders:
+             if os.path.exists(folder):
+                joinDicts(match, findDup(folder))
+             else:
+                 print('%s is not valid path, please verify' % folder)
+                 sys.exit()
+          printResults(match)
+      else:
+          print('Usage: python match_file.py folder_name or python match_file.py folder_name1 folder_name2 folder_name3')
